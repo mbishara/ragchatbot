@@ -33,6 +33,7 @@ def mock_anthropic(mocker):
 @pytest.fixture
 def generator(mock_anthropic):
     from ai_generator import AIGenerator
+
     return AIGenerator(api_key="test", model="claude-test")
 
 
@@ -44,6 +45,7 @@ def mock_tool_manager():
 
 
 # --- Tests ---
+
 
 def test_direct_response_no_tool_use(generator, mock_anthropic):
     mock_anthropic.messages.create.return_value = make_text_response("Direct answer")
@@ -58,23 +60,33 @@ def test_tool_use_triggers_second_call(generator, mock_anthropic, mock_tool_mana
     mock_anthropic.messages.create.side_effect = [first, second]
     tools = [{"name": "search_course_content"}]
 
-    generator.generate_response(query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager
+    )
 
     assert mock_anthropic.messages.create.call_count == 2
 
 
-def test_tool_manager_execute_called_correctly(generator, mock_anthropic, mock_tool_manager):
+def test_tool_manager_execute_called_correctly(
+    generator, mock_anthropic, mock_tool_manager
+):
     first = make_tool_use_response("search_course_content", {"query": "python"})
     second = make_text_response("Final answer")
     mock_anthropic.messages.create.side_effect = [first, second]
     tools = [{"name": "search_course_content"}]
 
-    generator.generate_response(query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager
+    )
 
-    mock_tool_manager.execute_tool.assert_called_once_with("search_course_content", query="python")
+    mock_tool_manager.execute_tool.assert_called_once_with(
+        "search_course_content", query="python"
+    )
 
 
-def test_final_synthesis_call_has_no_tools(generator, mock_anthropic, mock_tool_manager):
+def test_final_synthesis_call_has_no_tools(
+    generator, mock_anthropic, mock_tool_manager
+):
     # Two tool rounds: synthesis is the 3rd call and must have no tools
     first = make_tool_use_response("get_course_outline", {"course_name": "Python"})
     second = make_tool_use_response("search_course_content", {"query": "topic"})
@@ -82,7 +94,9 @@ def test_final_synthesis_call_has_no_tools(generator, mock_anthropic, mock_tool_
     mock_anthropic.messages.create.side_effect = [first, second, third]
     tools = [{"name": "get_course_outline"}, {"name": "search_course_content"}]
 
-    generator.generate_response(query="Find related course", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Find related course", tools=tools, tool_manager=mock_tool_manager
+    )
 
     last_call_kwargs = mock_anthropic.messages.create.call_args_list[-1].kwargs
     assert "tools" not in last_call_kwargs
@@ -90,12 +104,16 @@ def test_final_synthesis_call_has_no_tools(generator, mock_anthropic, mock_tool_
 
 
 def test_second_call_messages_structure(generator, mock_anthropic, mock_tool_manager):
-    first = make_tool_use_response("search_course_content", {"query": "python"}, tool_use_id="tu_abc")
+    first = make_tool_use_response(
+        "search_course_content", {"query": "python"}, tool_use_id="tu_abc"
+    )
     second = make_text_response("Final answer")
     mock_anthropic.messages.create.side_effect = [first, second]
     tools = [{"name": "search_course_content"}]
 
-    generator.generate_response(query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager
+    )
 
     second_call_kwargs = mock_anthropic.messages.create.call_args_list[1].kwargs
     messages = second_call_kwargs["messages"]
@@ -121,6 +139,7 @@ def test_conversation_history_in_system_prompt(generator, mock_anthropic):
 
 def test_no_conversation_history(generator, mock_anthropic):
     from ai_generator import AIGenerator
+
     mock_anthropic.messages.create.return_value = make_text_response("Answer")
     generator.generate_response(query="A question")
 
@@ -139,39 +158,54 @@ def test_no_tools_no_tool_choice_in_api_call(generator, mock_anthropic):
 
 # --- Two-round tool use tests ---
 
-def test_two_round_tool_use_makes_three_api_calls(generator, mock_anthropic, mock_tool_manager):
+
+def test_two_round_tool_use_makes_three_api_calls(
+    generator, mock_anthropic, mock_tool_manager
+):
     first = make_tool_use_response("get_course_outline", {"course_name": "Python"})
     second = make_tool_use_response("search_course_content", {"query": "topic"})
     third = make_text_response("Final answer")
     mock_anthropic.messages.create.side_effect = [first, second, third]
     tools = [{"name": "get_course_outline"}, {"name": "search_course_content"}]
 
-    result = generator.generate_response(query="Find related course", tools=tools, tool_manager=mock_tool_manager)
+    result = generator.generate_response(
+        query="Find related course", tools=tools, tool_manager=mock_tool_manager
+    )
 
     assert mock_anthropic.messages.create.call_count == 3
     assert result == "Final answer"
 
 
 def test_two_rounds_tools_executed_twice(generator, mock_anthropic, mock_tool_manager):
-    first = make_tool_use_response("get_course_outline", {"course_name": "Python"}, tool_use_id="tu_1")
-    second = make_tool_use_response("search_course_content", {"query": "topic"}, tool_use_id="tu_2")
+    first = make_tool_use_response(
+        "get_course_outline", {"course_name": "Python"}, tool_use_id="tu_1"
+    )
+    second = make_tool_use_response(
+        "search_course_content", {"query": "topic"}, tool_use_id="tu_2"
+    )
     third = make_text_response("Final answer")
     mock_anthropic.messages.create.side_effect = [first, second, third]
     tools = [{"name": "get_course_outline"}, {"name": "search_course_content"}]
 
-    generator.generate_response(query="Find related course", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Find related course", tools=tools, tool_manager=mock_tool_manager
+    )
 
     assert mock_tool_manager.execute_tool.call_count == 2
 
 
-def test_two_rounds_final_call_has_no_tools(generator, mock_anthropic, mock_tool_manager):
+def test_two_rounds_final_call_has_no_tools(
+    generator, mock_anthropic, mock_tool_manager
+):
     first = make_tool_use_response("get_course_outline", {"course_name": "Python"})
     second = make_tool_use_response("search_course_content", {"query": "topic"})
     third = make_text_response("Final answer")
     mock_anthropic.messages.create.side_effect = [first, second, third]
     tools = [{"name": "get_course_outline"}, {"name": "search_course_content"}]
 
-    generator.generate_response(query="Find related course", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Find related course", tools=tools, tool_manager=mock_tool_manager
+    )
 
     third_call_kwargs = mock_anthropic.messages.create.call_args_list[2].kwargs
     assert "tools" not in third_call_kwargs
@@ -179,13 +213,19 @@ def test_two_rounds_final_call_has_no_tools(generator, mock_anthropic, mock_tool
 
 
 def test_two_rounds_message_structure(generator, mock_anthropic, mock_tool_manager):
-    first = make_tool_use_response("get_course_outline", {"course_name": "Python"}, tool_use_id="tu_1")
-    second = make_tool_use_response("search_course_content", {"query": "topic"}, tool_use_id="tu_2")
+    first = make_tool_use_response(
+        "get_course_outline", {"course_name": "Python"}, tool_use_id="tu_1"
+    )
+    second = make_tool_use_response(
+        "search_course_content", {"query": "topic"}, tool_use_id="tu_2"
+    )
     third = make_text_response("Final answer")
     mock_anthropic.messages.create.side_effect = [first, second, third]
     tools = [{"name": "get_course_outline"}, {"name": "search_course_content"}]
 
-    generator.generate_response(query="Find related course", tools=tools, tool_manager=mock_tool_manager)
+    generator.generate_response(
+        query="Find related course", tools=tools, tool_manager=mock_tool_manager
+    )
 
     third_call_kwargs = mock_anthropic.messages.create.call_args_list[2].kwargs
     messages = third_call_kwargs["messages"]
@@ -200,29 +240,39 @@ def test_two_rounds_message_structure(generator, mock_anthropic, mock_tool_manag
     assert messages[4]["content"][0]["tool_use_id"] == "tu_2"
 
 
-def test_early_termination_when_intermediate_returns_text(generator, mock_anthropic, mock_tool_manager):
+def test_early_termination_when_intermediate_returns_text(
+    generator, mock_anthropic, mock_tool_manager
+):
     first = make_tool_use_response("search_course_content", {"query": "python"})
     second = make_text_response("Direct answer after round 1")
     mock_anthropic.messages.create.side_effect = [first, second]
     tools = [{"name": "search_course_content"}]
 
-    result = generator.generate_response(query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager)
+    result = generator.generate_response(
+        query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager
+    )
 
     assert mock_anthropic.messages.create.call_count == 2
     assert result == "Direct answer after round 1"
 
 
-def test_tool_execution_error_does_not_raise(generator, mock_anthropic, mock_tool_manager):
+def test_tool_execution_error_does_not_raise(
+    generator, mock_anthropic, mock_tool_manager
+):
     first = make_tool_use_response("search_course_content", {"query": "python"})
     second = make_text_response("Answer despite error")
     mock_anthropic.messages.create.side_effect = [first, second]
     mock_tool_manager.execute_tool.side_effect = RuntimeError("DB unavailable")
     tools = [{"name": "search_course_content"}]
 
-    result = generator.generate_response(query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager)
+    result = generator.generate_response(
+        query="Tell me about Python", tools=tools, tool_manager=mock_tool_manager
+    )
 
     assert result == "Answer despite error"
     # Error string should appear in the tool_result sent to the intermediate call
     second_call_kwargs = mock_anthropic.messages.create.call_args_list[1].kwargs
     tool_result_content = second_call_kwargs["messages"][2]["content"]
-    assert any("Error executing tool" in item["content"] for item in tool_result_content)
+    assert any(
+        "Error executing tool" in item["content"] for item in tool_result_content
+    )

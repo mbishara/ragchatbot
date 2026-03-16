@@ -36,6 +36,7 @@ def manager(mock_store, tool):
 
 # --- CourseSearchTool.execute() tests ---
 
+
 def test_execute_returns_formatted_results(tool, mock_store):
     mock_store.search.return_value = SearchResults(
         documents=["Content about Python"],
@@ -59,25 +60,33 @@ def test_execute_no_lesson_number_in_header(tool, mock_store):
 
 
 def test_execute_empty_results_no_filter(tool, mock_store):
-    mock_store.search.return_value = SearchResults(documents=[], metadata=[], distances=[])
+    mock_store.search.return_value = SearchResults(
+        documents=[], metadata=[], distances=[]
+    )
     result = tool.execute(query="something")
     assert result == "No relevant content found."
 
 
 def test_execute_empty_results_with_course_filter(tool, mock_store):
-    mock_store.search.return_value = SearchResults(documents=[], metadata=[], distances=[])
+    mock_store.search.return_value = SearchResults(
+        documents=[], metadata=[], distances=[]
+    )
     result = tool.execute(query="something", course_name="Python")
     assert result == "No relevant content found in course 'Python'."
 
 
 def test_execute_empty_results_with_lesson_filter(tool, mock_store):
-    mock_store.search.return_value = SearchResults(documents=[], metadata=[], distances=[])
+    mock_store.search.return_value = SearchResults(
+        documents=[], metadata=[], distances=[]
+    )
     result = tool.execute(query="something", lesson_number=3)
     assert result == "No relevant content found in lesson 3."
 
 
 def test_execute_empty_results_with_both_filters(tool, mock_store):
-    mock_store.search.return_value = SearchResults(documents=[], metadata=[], distances=[])
+    mock_store.search.return_value = SearchResults(
+        documents=[], metadata=[], distances=[]
+    )
     result = tool.execute(query="something", course_name="Python", lesson_number=3)
     assert result == "No relevant content found in course 'Python' in lesson 3."
 
@@ -98,7 +107,9 @@ def test_execute_populates_last_sources(tool, mock_store):
     )
     mock_store.get_lesson_link.return_value = "https://example.com/lesson1"
     tool.execute(query="python")
-    assert tool.last_sources == [{"label": "Python Course - Lesson 1", "url": "https://example.com/lesson1"}]
+    assert tool.last_sources == [
+        {"label": "Python Course - Lesson 1", "url": "https://example.com/lesson1"}
+    ]
 
 
 def test_execute_deduplicates_sources(tool, mock_store):
@@ -128,6 +139,7 @@ def test_execute_multiple_results_joined(tool, mock_store):
 
 
 # --- ToolManager tests ---
+
 
 def test_tool_manager_get_last_sources(manager, tool, mock_store):
     mock_store.search.return_value = SearchResults(

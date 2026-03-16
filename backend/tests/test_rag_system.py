@@ -9,6 +9,7 @@ def rag(mocker):
     mocker.patch("rag_system.DocumentProcessor")
     mocker.patch("rag_system.SessionManager")
     from rag_system import RAGSystem
+
     cfg = MagicMock()
     system = RAGSystem(cfg)
     # Replace with controllable mocks
@@ -36,7 +37,9 @@ def test_query_prompt_formatted_correctly(rag):
     rag.query("What is Python?")
 
     call_kwargs = rag.ai_generator.generate_response.call_args.kwargs
-    assert call_kwargs["query"].startswith("Answer this question about course materials:")
+    assert call_kwargs["query"].startswith(
+        "Answer this question about course materials:"
+    )
 
 
 def test_query_passes_tools_to_generator(rag):
@@ -73,7 +76,9 @@ def test_query_sources_reset_after_retrieval(rag):
 def test_query_with_session_fetches_history(rag):
     rag.ai_generator.generate_response.return_value = "answer"
     rag.tool_manager.get_last_sources.return_value = []
-    rag.session_manager.get_conversation_history.return_value = "User: hi\nAssistant: hello"
+    rag.session_manager.get_conversation_history.return_value = (
+        "User: hi\nAssistant: hello"
+    )
 
     rag.query("What is Python?", session_id="s1")
 
@@ -86,7 +91,9 @@ def test_query_with_session_updates_history(rag):
 
     rag.query("What is Python?", session_id="s1")
 
-    rag.session_manager.add_exchange.assert_called_once_with("s1", "What is Python?", "Final answer")
+    rag.session_manager.add_exchange.assert_called_once_with(
+        "s1", "What is Python?", "Final answer"
+    )
 
 
 def test_query_no_session_no_history_call(rag):
@@ -104,6 +111,7 @@ def test_query_two_tools_registered_at_init(mocker):
     mocker.patch("rag_system.DocumentProcessor")
     mocker.patch("rag_system.SessionManager")
     from rag_system import RAGSystem
+
     cfg = MagicMock()
     system = RAGSystem(cfg)
     assert len(system.tool_manager.tools) == 2
