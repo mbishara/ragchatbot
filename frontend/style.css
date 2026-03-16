@@ -24,6 +24,156 @@
     --welcome-border: #2563eb;
 }
 
+/* Light Mode Variables */
+[data-theme="light"] {
+    --primary-color: #1d4ed8;
+    --primary-hover: #1e40af;
+    --background: #f1f5f9;
+    --surface: #ffffff;
+    --surface-hover: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --border-color: #cbd5e1;
+    --user-message: #1d4ed8;
+    --assistant-message: #ffffff;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --radius: 12px;
+    --focus-ring: rgba(29, 78, 216, 0.25);
+    --welcome-bg: #eff6ff;
+    --welcome-border: #3b82f6;
+}
+
+/* Light mode: assistant bubble needs a border to stand out from background */
+[data-theme="light"] .message.assistant .message-content {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Light mode: code blocks — swap dark transparent overlay for a light tint */
+[data-theme="light"] .message-content code {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+
+[data-theme="light"] .message-content pre {
+    background-color: #e2e8f0;
+    border: 1px solid #cbd5e1;
+}
+
+/* Light mode: welcome message shadow */
+[data-theme="light"] .message.welcome-message .message-content {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border-color: var(--welcome-border);
+    background: var(--welcome-bg);
+}
+
+/* Light mode: scrollbar */
+[data-theme="light"] .chat-messages::-webkit-scrollbar-track,
+[data-theme="light"] .sidebar::-webkit-scrollbar-track {
+    background: var(--background);
+}
+
+[data-theme="light"] .chat-messages::-webkit-scrollbar-thumb,
+[data-theme="light"] .sidebar::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+}
+
+[data-theme="light"] .chat-messages::-webkit-scrollbar-thumb:hover,
+[data-theme="light"] .sidebar::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Light mode: error and success messages — slightly adjust tint */
+[data-theme="light"] .error-message {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: rgba(220, 38, 38, 0.25);
+    color: #b91c1c;
+}
+
+[data-theme="light"] .success-message {
+    background: rgba(22, 163, 74, 0.08);
+    border-color: rgba(22, 163, 74, 0.25);
+    color: #15803d;
+}
+
+/* Light mode: suggested items and stat items */
+[data-theme="light"] .suggested-item:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+[data-theme="light"] .stat-item {
+    background: var(--background);
+}
+
+[data-theme="light"] .source-pill {
+    background: var(--background);
+}
+
+/* Smooth theme transitions */
+body,
+body *,
+body *::before,
+body *::after {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: var(--shadow);
+}
+
+.theme-toggle:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.theme-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Icon visibility logic */
+.theme-toggle .icon-sun {
+    display: block;
+    transition: opacity 0.3s ease, transform 0.4s ease;
+}
+
+.theme-toggle .icon-moon {
+    display: none;
+    transition: opacity 0.3s ease, transform 0.4s ease;
+}
+
+[data-theme="light"] .theme-toggle .icon-sun {
+    display: none;
+}
+
+[data-theme="light"] .theme-toggle .icon-moon {
+    display: block;
+}
+
 /* Base Styles */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

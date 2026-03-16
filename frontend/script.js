@@ -1,6 +1,14 @@
 // API base URL - use relative path to work from any host
 const API_URL = '/api';
 
+// Theme toggle — apply saved preference before first paint to avoid flash
+(function initTheme() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+    }
+})();
+
 // Global state
 let currentSessionId = null;
 
@@ -17,9 +25,34 @@ document.addEventListener('DOMContentLoaded', () => {
     courseTitles = document.getElementById('courseTitles');
     
     setupEventListeners();
+    setupThemeToggle();
     createNewSession();
     loadCourseStats();
 });
+
+// Theme Toggle
+function setupThemeToggle() {
+    const btn = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    // Sync aria-label with current state on load
+    btn.setAttribute('aria-label',
+        html.getAttribute('data-theme') === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
+    );
+
+    btn.addEventListener('click', () => {
+        const isLight = html.getAttribute('data-theme') === 'light';
+        if (isLight) {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'dark');
+            btn.setAttribute('aria-label', 'Switch to light mode');
+        } else {
+            html.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+            btn.setAttribute('aria-label', 'Switch to dark mode');
+        }
+    });
+}
 
 // Event Listeners
 function setupEventListeners() {
