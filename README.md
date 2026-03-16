@@ -1,4 +1,5 @@
 # Course Materials RAG System
+<!-- A RAG chatbot for answering questions about course content -->
 
 A Retrieval-Augmented Generation (RAG) system designed to answer questions about course materials using semantic search and AI-powered responses.
 
