@@ -7,18 +7,19 @@ class AIGenerator:
     # Static system prompt to avoid rebuilding on each call
     SYSTEM_PROMPT = """ You are an AI assistant specialized in course materials and educational content with access to a comprehensive search tool for course information.
 
-Search Tool Usage:
-- Use the search tool **only** for questions about specific course content or detailed educational materials
-- **One search per query maximum**
-- Synthesize search results into accurate, fact-based responses
-- If search yields no results, state this clearly without offering alternatives
+Tool Usage:
+- Use **`get_course_outline`** for questions about a course's structure, syllabus, lessons, or outline. Return the course title, course link, and every lesson with its number and title.
+- Use **`search_course_content`** for questions about specific course content. You may make up to **2 sequential tool calls** if needed (e.g., get an outline then search for related content). Stop tool use as soon as you have enough information.
+- Synthesize tool results into accurate, fact-based responses.
+- If a tool yields no results, state this clearly without offering alternatives.
 
 Response Protocol:
-- **General knowledge questions**: Answer using existing knowledge without searching
-- **Course-specific questions**: Search first, then answer
+- **General knowledge questions**: Answer using existing knowledge without using a tool.
+- **Outline / structure questions**: Use `get_course_outline`, then present the full course title, link, and numbered lesson list.
+- **Course-specific content questions**: Use `search_course_content`, then answer.
 - **No meta-commentary**:
- - Provide direct answers only — no reasoning process, search explanations, or question-type analysis
- - Do not mention "based on the search results"
+ - Provide direct answers only — no reasoning process, tool explanations, or question-type analysis.
+ - Do not mention "based on the search results".
 
 
 All responses must be:
@@ -86,50 +87,53 @@ Provide only the direct answer to what was asked.
         # Return direct response
         return response.content[0].text
     
+    def _execute_tools(self, response, tool_manager) -> list:
+        """Execute all tool_use blocks in a response, returning tool_result dicts."""
+        tool_results = []
+        for block in response.content:
+            if block.type == "tool_use":
+                try:
+                    result = tool_manager.execute_tool(block.name, **block.input)
+                except Exception as e:
+                    result = f"Error executing tool '{block.name}': {e}"
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result
+                })
+        return tool_results
+
     def _handle_tool_execution(self, initial_response, base_params: Dict[str, Any], tool_manager):
         """
-        Handle execution of tool calls and get follow-up response.
-        
+        Handle up to 2 sequential rounds of tool use before synthesizing a final response.
+
         Args:
-            initial_response: The response containing tool use requests
-            base_params: Base API parameters
+            initial_response: The first tool_use response from generate_response
+            base_params: Full API parameters from the first call (includes tools, system, messages)
             tool_manager: Manager to execute tools
-            
+
         Returns:
             Final response text after tool execution
         """
-        # Start with existing messages
         messages = base_params["messages"].copy()
-        
-        # Add AI's tool use response
-        messages.append({"role": "assistant", "content": initial_response.content})
-        
-        # Execute all tool calls and collect results
-        tool_results = []
-        for content_block in initial_response.content:
-            if content_block.type == "tool_use":
-                tool_result = tool_manager.execute_tool(
-                    content_block.name, 
-                    **content_block.input
-                )
-                
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": content_block.id,
-                    "content": tool_result
-                })
-        
-        # Add tool results as single message
-        if tool_results:
+        current_response = initial_response  # stop_reason guaranteed "tool_use"
+
+        for tool_round in range(2):
+            messages.append({"role": "assistant", "content": current_response.content})
+            tool_results = self._execute_tools(current_response, tool_manager)
             messages.append({"role": "user", "content": tool_results})
-        
-        # Prepare final API call without tools
+
+            if tool_round < 1:  # Round 0: make intermediate call WITH tools
+                next_response = self.client.messages.create(**{**base_params, "messages": messages})
+                if next_response.stop_reason != "tool_use":
+                    return next_response.content[0].text  # Claude answered directly
+                current_response = next_response
+            # Round 1: fall through to final synthesis
+
+        # Final call WITHOUT tools — strip tools by building from base_params
         final_params = {
             **self.base_params,
             "messages": messages,
             "system": base_params["system"]
         }
-        
-        # Get final response
-        final_response = self.client.messages.create(**final_params)
-        return final_response.content[0].text
+        return self.client.messages.create(**final_params).content[0].text

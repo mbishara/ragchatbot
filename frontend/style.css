@@ -107,6 +107,12 @@ header h1 {
     margin-bottom: 1.5rem;
 }
 
+.stats-collapsible,
+.suggested-collapsible {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
 .sidebar-section:last-child {
     margin-bottom: 0;
 }
@@ -241,8 +247,29 @@ header h1 {
 }
 
 .sources-content {
-    padding: 0 0.5rem 0.25rem 1.5rem;
-    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem 0.25rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.source-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    color: var(--primary-color);
+    font-size: 0.75rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+a.source-pill:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 /* Markdown formatting styles */
@@ -445,6 +472,33 @@ header h1 {
     margin: 0.5rem 0;
 }
 
+/* New Chat Button */
+.new-chat-btn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    text-align: left;
+    list-style: none;
+    transition: color 0.2s ease;
+}
+
+.new-chat-btn:hover {
+    color: var(--primary-color);
+}
+
+.new-chat-btn:focus {
+    color: var(--primary-color);
+}
+
 /* Sidebar Headers */
 .stats-header,
 .suggested-header {
@@ -452,7 +506,7 @@ header h1 {
     font-weight: 600;
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
     border: none;
     background: none;
     list-style: none;

@@ -30,6 +30,14 @@ function setupEventListeners() {
     });
     
     
+    // New chat button
+    document.getElementById('newChatBtn').addEventListener('click', () => {
+        if (currentSessionId) {
+            fetch(`${API_URL}/session/${currentSessionId}`, { method: 'DELETE' }).catch(() => {});
+        }
+        createNewSession();
+    });
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -126,9 +134,9 @@ function addMessage(content, type, sources = null, isWelcome = false) {
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
                 <div class="sources-content">${sources.map(s => s.url
-                    ? '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer">' + s.label + '</a>'
-                    : s.label
-                ).join(', ')}</div>
+                    ? '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer" class="source-pill">' + s.label + '</a>'
+                    : '<span class="source-pill">' + s.label + '</span>'
+                ).join('')}</div>
             </details>
         `;
     }
