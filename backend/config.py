@@ -26,5 +26,9 @@ class Config:
     # Database paths
     CHROMA_PATH: str = "./chroma_db"  # ChromaDB storage location
 
+    # Session limits
+    max_sessions: int = 1000  # Maximum number of concurrent sessions
+    session_ttl_seconds: int = 3600  # Session idle timeout (1 hour)
+
 
 config = Config()

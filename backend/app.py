@@ -2,13 +2,15 @@ import warnings
 
 warnings.filterwarnings("ignore", message="resource_tracker: There appear to be.*")
 
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 import os
+
+logger = logging.getLogger(__name__)
 
 from config import config
 from rag_system import RAGSystem
@@ -16,17 +18,13 @@ from rag_system import RAGSystem
 # Initialize FastAPI app
 app = FastAPI(title="Course Materials RAG System", root_path="")
 
-# Add trusted host middleware for proxy
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
-
-# Enable CORS with proper settings for proxy
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 # Initialize RAG system
@@ -73,7 +71,8 @@ async def query_documents(request: QueryRequest):
 
         return QueryResponse(answer=answer, sources=sources, session_id=session_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Unhandled error in /api/query")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
 
 
 @app.get("/api/courses", response_model=CourseStats)
@@ -86,7 +85,8 @@ async def get_course_stats():
             course_titles=analytics["course_titles"],
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("Unhandled error in /api/courses")
+        raise HTTPException(status_code=500, detail="An internal error occurred. Please try again.")
 
 
 @app.delete("/api/session/{session_id}")
@@ -98,7 +98,7 @@ async def delete_session(session_id: str):
 @app.on_event("startup")
 async def startup_event():
     """Load initial documents on startup"""
-    docs_path = "../docs"
+    docs_path = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs"))
     if os.path.exists(docs_path):
         print("Loading initial documents...")
         try:

@@ -85,6 +85,8 @@ Provide only the direct answer to what was asked.
             return self._handle_tool_execution(response, api_params, tool_manager)
 
         # Return direct response
+        if not response.content:
+            raise ValueError("Claude API returned empty content — possible safety filter or API error")
         return response.content[0].text
 
     def _execute_tools(self, response, tool_manager) -> list:
@@ -128,6 +130,8 @@ Provide only the direct answer to what was asked.
                     **{**base_params, "messages": messages}
                 )
                 if next_response.stop_reason != "tool_use":
+                    if not next_response.content:
+                        raise ValueError("Claude API returned empty content — possible safety filter or API error")
                     return next_response.content[0].text  # Claude answered directly
                 current_response = next_response
             # Round 1: fall through to final synthesis
@@ -138,4 +142,7 @@ Provide only the direct answer to what was asked.
             "messages": messages,
             "system": base_params["system"],
         }
-        return self.client.messages.create(**final_params).content[0].text
+        final_response = self.client.messages.create(**final_params)
+        if not final_response.content:
+            raise ValueError("Claude API returned empty content — possible safety filter or API error")
+        return final_response.content[0].text

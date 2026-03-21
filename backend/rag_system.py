@@ -24,7 +24,11 @@ class RAGSystem:
         self.ai_generator = AIGenerator(
             config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL
         )
-        self.session_manager = SessionManager(config.MAX_HISTORY)
+        self.session_manager = SessionManager(
+            config.MAX_HISTORY,
+            config.max_sessions,
+            config.session_ttl_seconds,
+        )
 
         # Initialize search tools
         self.tool_manager = ToolManager()
