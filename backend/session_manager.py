@@ -1,3 +1,5 @@
+import time
+from collections import OrderedDict
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 
@@ -13,22 +15,47 @@ class Message:
 class SessionManager:
     """Manages conversation sessions and message history"""
 
-    def __init__(self, max_history: int = 5):
+    def __init__(self, max_history: int = 5, max_sessions: int = 1000, session_ttl_seconds: int = 3600):
         self.max_history = max_history
-        self.sessions: Dict[str, List[Message]] = {}
+        self.max_sessions = max_sessions
+        self.session_ttl_seconds = session_ttl_seconds
+        self.sessions: OrderedDict[str, List[Message]] = OrderedDict()
+        self._last_access: Dict[str, float] = {}
         self.session_counter = 0
+
+    def _evict(self):
+        """Prune expired sessions, then evict oldest if over max_sessions."""
+        now = time.time()
+        expired = [
+            sid for sid, ts in self._last_access.items()
+            if now - ts > self.session_ttl_seconds
+        ]
+        for sid in expired:
+            self.sessions.pop(sid, None)
+            self._last_access.pop(sid, None)
+
+        while len(self.sessions) >= self.max_sessions:
+            oldest_sid, _ = self.sessions.popitem(last=False)
+            self._last_access.pop(oldest_sid, None)
 
     def create_session(self) -> str:
         """Create a new conversation session"""
+        self._evict()
         self.session_counter += 1
         session_id = f"session_{self.session_counter}"
         self.sessions[session_id] = []
+        self._last_access[session_id] = time.time()
         return session_id
 
     def add_message(self, session_id: str, role: str, content: str):
         """Add a message to the conversation history"""
+        self._evict()
         if session_id not in self.sessions:
             self.sessions[session_id] = []
+
+        self._last_access[session_id] = time.time()
+        # Move to end to reflect recent access
+        self.sessions.move_to_end(session_id)
 
         message = Message(role=role, content=content)
         self.sessions[session_id].append(message)
@@ -46,8 +73,12 @@ class SessionManager:
 
     def get_conversation_history(self, session_id: Optional[str]) -> Optional[str]:
         """Get formatted conversation history for a session"""
+        self._evict()
         if not session_id or session_id not in self.sessions:
             return None
+
+        self._last_access[session_id] = time.time()
+        self.sessions.move_to_end(session_id)
 
         messages = self.sessions[session_id]
         if not messages:

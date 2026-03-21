@@ -247,7 +247,10 @@ class VectorStore:
                 for metadata in results["metadatas"]:
                     course_meta = metadata.copy()
                     if "lessons_json" in course_meta:
-                        course_meta["lessons"] = json.loads(course_meta["lessons_json"])
+                        try:
+                            course_meta["lessons"] = json.loads(course_meta["lessons_json"])
+                        except json.JSONDecodeError:
+                            course_meta["lessons"] = []
                         del course_meta[
                             "lessons_json"
                         ]  # Remove the JSON string version
@@ -282,10 +285,14 @@ class VectorStore:
             results = self.course_catalog.get(ids=[course_title])
             if results and "metadatas" in results and results["metadatas"]:
                 metadata = results["metadatas"][0]
+                try:
+                    lessons = json.loads(metadata.get("lessons_json", "[]"))
+                except json.JSONDecodeError:
+                    lessons = []
                 return {
                     "title": metadata.get("title"),
                     "course_link": metadata.get("course_link"),
-                    "lessons": json.loads(metadata.get("lessons_json", "[]")),
+                    "lessons": lessons,
                 }
             return None
         except Exception as e:
@@ -303,7 +310,10 @@ class VectorStore:
                 metadata = results["metadatas"][0]
                 lessons_json = metadata.get("lessons_json")
                 if lessons_json:
-                    lessons = json.loads(lessons_json)
+                    try:
+                        lessons = json.loads(lessons_json)
+                    except json.JSONDecodeError:
+                        lessons = []
                     # Find the lesson with matching number
                     for lesson in lessons:
                         if lesson.get("lesson_number") == lesson_number:

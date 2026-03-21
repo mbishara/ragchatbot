@@ -159,22 +159,44 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     
     // Convert markdown to HTML for assistant messages
     const displayContent = type === 'assistant' ? marked.parse(content) : escapeHtml(content);
-    
-    let html = `<div class="message-content">${displayContent}</div>`;
-    
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.innerHTML = displayContent;
+    messageDiv.appendChild(contentDiv);
+
     if (sources && sources.length > 0) {
-        html += `
-            <details class="sources-collapsible">
-                <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.map(s => s.url
-                    ? '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer" class="source-pill">' + s.label + '</a>'
-                    : '<span class="source-pill">' + s.label + '</span>'
-                ).join('')}</div>
-            </details>
-        `;
+        const details = document.createElement('details');
+        details.className = 'sources-collapsible';
+
+        const summary = document.createElement('summary');
+        summary.className = 'sources-header';
+        summary.textContent = 'Sources';
+        details.appendChild(summary);
+
+        const sourcesContent = document.createElement('div');
+        sourcesContent.className = 'sources-content';
+
+        sources.forEach(s => {
+            if (s.url) {
+                const a = document.createElement('a');
+                a.href = s.url;
+                a.textContent = s.label;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.className = 'source-pill';
+                sourcesContent.appendChild(a);
+            } else {
+                const span = document.createElement('span');
+                span.className = 'source-pill';
+                span.textContent = s.label;
+                sourcesContent.appendChild(span);
+            }
+        });
+
+        details.appendChild(sourcesContent);
+        messageDiv.appendChild(details);
     }
-    
-    messageDiv.innerHTML = html;
     chatMessages.appendChild(messageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
@@ -213,12 +235,19 @@ async function loadCourseStats() {
         
         // Update course titles
         if (courseTitles) {
+            courseTitles.innerHTML = '';
             if (data.course_titles && data.course_titles.length > 0) {
-                courseTitles.innerHTML = data.course_titles
-                    .map(title => `<div class="course-title-item">${title}</div>`)
-                    .join('');
+                data.course_titles.forEach(title => {
+                    const div = document.createElement('div');
+                    div.className = 'course-title-item';
+                    div.textContent = title;
+                    courseTitles.appendChild(div);
+                });
             } else {
-                courseTitles.innerHTML = '<span class="no-courses">No courses available</span>';
+                const span = document.createElement('span');
+                span.className = 'no-courses';
+                span.textContent = 'No courses available';
+                courseTitles.appendChild(span);
             }
         }
         
